@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     ARCHIVO: empleado.html
+     DESCRIPCIÓN: Panel del empleado de InventarioPlus.
+     Permite consultar el inventario, registrar entradas y salidas
+     de productos, y ver el historial de movimientos.
+     No incluye permisos de creación/edición/eliminación de productos.
+     La lógica de negocio está en js/auth.js y la de interfaz en
+     js/productos.js.
+     ============================================================ -->
+<html lang="es">
+<head>
+    <!-- Configuración básica de la página -->
+    <meta charset="UTF-8">
+    <!-- Viewport responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título de la pestaña -->
+    <title>InventarioPlus - Panel de Empleado</title>
+
+    <!-- Bootstrap 5 CSS desde CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <!-- Iconos de Bootstrap Icons desde CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- ==================== NAVBAR (Barra de navegación superior) ==================== -->
+    <nav class="navbar navbar-expand-lg navbar-custom navbar-dark">
+        <div class="container">
+            <!-- Marca/Logo de la aplicación -->
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-box"></i> InventarioPlus
+            </a>
+            <!-- Contenedor derecho: info del usuario y botón de salida -->
+            <div class="d-flex align-items-center gap-3">
+                <!-- Nombre y rol del usuario (inyectado con JS) -->
+                <div id="userInfo"></div>
+                <!-- Botón para cerrar sesión -->
+                <button id="logoutBtn" class="btn btn-logout">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== CONTENEDOR PRINCIPAL ==================== -->
+    <div class="container mt-4">
+        <!-- Título del panel -->
+        <h2 class="mb-4"><i class="bi bi-person-badge"></i> Panel de Empleado</h2>
+
+        <!-- ==================== ALERTA DE ÉXITO ==================== -->
+        <div id="alertExito" class="alert alert-success alert-dismissible fade d-none" role="alert">
+            <!-- Texto del mensaje (se rellena con JS) -->
+            <span id="alertExitoText"></span>
+            <!-- Botón cerrar -->
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- ==================== ESTADÍSTICAS ==================== -->
+        <!-- Fila con 4 tarjetas de estadísticas del inventario -->
+        <div class="row mb-4">
+            <!-- Tarjeta: Total de productos -->
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Total Productos</h6>
+                        <h3 id="totalProductos">0</h3>
+                    </div>
+                </div>
+            </div>
+            <!-- Tarjeta: Productos disponibles (con stock > 0) -->
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Disponibles</h6>
+                        <h3 id="productosActivos">0</h3>
+                    </div>
+                </div>
+            </div>
+            <!-- Tarjeta: Productos con bajo stock -->
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Bajo Stock</h6>
+                        <h3 id="productosBajoStock">0</h3>
+                    </div>
+                </div>
+            </div>
+            <!-- Tarjeta: Valor total del inventario -->
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Valor Total</h6>
+                        <h3 id="valorInventario">$0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TABLA DE PRODUCTOS (INVENTARIO) ==================== -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-table"></i> Inventario</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <!-- Encabezados de la tabla -->
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Stock</th>
+                                <th>Precio</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <!-- Cuerpo de la tabla (se llena con JS) -->
+                        <tbody id="tablaProductosEmpleado">
+                            <tr><td colspan="6" class="text-center text-muted">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== PANEL DE MOVIMIENTOS (Entrada / Salida) ==================== -->
+        <div class="row mb-4">
+            <!-- Columna: Formulario de ENTRADA -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Registrar Entrada</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Formulario de entrada -->
+                        <form id="formEntrada" onsubmit="registrarEntradaForm(); return false;">
+                            <div class="mb-3">
+                                <label class="form-label">Producto</label>
+                                <!-- Select de productos (se llena con JS) -->
+                                <select class="form-select" id="productoEntrada" required>
+                                    <option value="">Selecciona producto</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Cantidad</label>
+                                <input type="number" class="form-control" id="cantidadEntrada" min="1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Razón</label>
+                                <input type="text" class="form-control" id="razonEntrada" placeholder="Compra, Devolución..." required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Registrar Entrada</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna: Formulario de SALIDA -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-dash-circle"></i> Registrar Salida</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Formulario de salida -->
+                        <form id="formSalida" onsubmit="registrarSalidaForm(); return false;">
+                            <div class="mb-3">
+                                <label class="form-label">Producto</label>
+                                <!-- Select de productos (se llena con JS) -->
+                                <select class="form-select" id="productoSalida" required>
+                                    <option value="">Selecciona producto</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Cantidad</label>
+                                <input type="number" class="form-control" id="cantidadSalida" min="1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Razón</label>
+                                <input type="text" class="form-control" id="razonSalida" placeholder="Venta, Pérdida, Dañado..." required>
+                            </div>
+                            <button type="submit" class="btn btn-danger w-100">Registrar Salida</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== HISTORIAL DE MOVIMIENTOS ==================== -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Movimientos</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <!-- Encabezados del historial -->
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Producto</th>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Cantidad</th>
+                                <th>Stock Nuevo</th>
+                            </tr>
+                        </thead>
+                        <!-- Cuerpo del historial (se llena con JS) -->
+                        <tbody id="tablaMovimientos">
+                            <tr><td colspan="6" class="text-center text-muted">Sin movimientos</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS bundle (incluye Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Lógica de autenticación y negocio -->
+    <script src="js/auth.js"></script>
+    <!-- Lógica de interfaz de productos -->
+    <script src="js/productos.js"></script>
+
+    <!-- ==================== SCRIPT INLINE DEL PANEL DE EMPLEADO ==================== -->
+    <script>
+        /* ============================================================
+           REGISTRO DE ENTRADAS
+           ============================================================ */
+
+        /**
+         * Procesa el formulario de registro de entrada.
+         * Valida los campos, registra la entrada y actualiza la interfaz.
+         */
+        function registrarEntradaForm() {
+            // Recoge los valores del formulario
+            const productoId = parseInt(document.getElementById('productoEntrada').value);
+            const cantidad = parseInt(document.getElementById('cantidadEntrada').value);
+            const razon = document.getElementById('razonEntrada').value;
+            const sesion = obtenerSesion();   // Obtiene datos del usuario actual
+
+            // Validación: todos los campos son obligatorios
+            if (!productoId || !cantidad || !razon) {
+                alert('Completa todos los campos');
+                return;
+            }
+
+            // Registra la entrada usando auth.js (incrementa el stock)
+            registrarEntrada(productoId, cantidad, razon, sesion.nombre);
+            mostrarExito('Entrada registrada correctamente');
+            document.getElementById('formEntrada').reset();  // Limpia el formulario
+
+            // Actualiza todas las vistas (tablas, estadísticas, selects)
+            actualizarTablaProductosEmpleado();
+            actualizarTablaMovimientos();
+            actualizarEstadisticas();
+            cargarSelectsProductos();
+        }
+
+        /* ============================================================
+           REGISTRO DE SALIDAS
+           ============================================================ */
+
+        /**
+         * Procesa el formulario de registro de salida.
+         * Valida los campos, verifica stock y actualiza la interfaz.
+         */
+        function registrarSalidaForm() {
+            // Recoge los valores del formulario
+            const productoId = parseInt(document.getElementById('productoSalida').value);
+            const cantidad = parseInt(document.getElementById('cantidadSalida').value);
+            const razon = document.getElementById('razonSalida').value;
+            const sesion = obtenerSesion();   // Datos del usuario actual
+
+            // Validación: todos los campos son obligatorios
+            if (!productoId || !cantidad || !razon) {
+                alert('Completa todos los campos');
+                return;
+            }
+
+            // Registra la salida usando auth.js (devuelve null si no hay stock)
+            const resultado = registrarSalida(productoId, cantidad, razon, sesion.nombre);
+            if (!resultado) {
+                alert('Stock insuficiente');
+                return;
+            }
+
+            mostrarExito('Salida registrada correctamente');
+            document.getElementById('formSalida').reset();  // Limpia el formulario
+
+            // Actualiza todas las vistas
+            actualizarTablaProductosEmpleado();
+            actualizarTablaMovimientos();
+            actualizarEstadisticas();
+            cargarSelectsProductos();
+        }
+
+        /* ============================================================
+           CARGAR SELECTS DE PRODUCTOS
+           ============================================================ */
+
+        /**
+         * Carga los productos en los menús desplegables de entrada y salida.
+         */
+        function cargarSelectsProductos() {
+            // Obtiene la lista de productos
+            const productos = obtenerProductos();
+            const selectEntrada = document.getElementById('productoEntrada');
+            const selectSalida = document.getElementById('productoSalida');
+
+            // Reinicia los selects con una opción por defecto
+            selectEntrada.innerHTML = '<option value="">Selecciona producto</option>';
+            selectSalida.innerHTML = '<option value="">Selecciona producto</option>';
+
+            // Agrega cada producto como opción en ambos selects
+            productos.forEach(p => {
+                selectEntrada.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+                selectSalida.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+            });
+        }
+
+        /* ============================================================
+           ALERTA DE ÉXITO
+           ============================================================ */
+
+        /**
+         * Muestra una alerta de éxito por 3 segundos.
+         * @param {string} msg - Mensaje a mostrar.
+         */
+        function mostrarExito(msg) {
+            const div = document.getElementById('alertExito');
+            document.getElementById('alertExitoText').textContent = msg;
+            div.classList.remove('d-none');           // Hace visible la alerta
+            setTimeout(() => div.classList.add('d-none'), 3000);  // La oculta a los 3s
+        }
+
+        /* ============================================================
+           INICIALIZACIÓN DEL PANEL
+           Se ejecuta cuando el DOM está completamente cargado
+           ============================================================ */
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializa todo el panel al cargar la página
+            inicializarInterfazProductos();
+            actualizarTablaProductosEmpleado();
+            actualizarTablaMovimientos();
+            cargarSelectsProductos();
+        });
+    </script>
+</body>
+</html>

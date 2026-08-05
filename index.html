@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     ARCHIVO: index.html
+     DESCRIPCIÓN: Página principal de InventarioPlus.
+     Muestra el formulario de inicio de sesión (login) con
+     selección de tipo de usuario (Empleado/Administrador).
+     La lógica de autenticación se maneja en js/auth.js.
+     ============================================================ -->
+<html lang="es">
+<head>
+    <!-- Configuración básica de la página -->
+    <meta charset="UTF-8">
+    <!-- Viewport para que la página sea responsive en dispositivos móviles -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título que aparece en la pestaña del navegador -->
+    <title>InventarioPlus - Login</title>
+
+    <!-- Bootstrap 5 CSS (librería de estilos desde CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <!-- Hoja de estilos personalizada del proyecto -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<!-- Clase "login-page" para aplicar el fondo degradado personalizado -->
+<body class="login-page">
+
+    <!-- Contenedor principal: centra vertical y horizontalmente el login -->
+    <div class="container d-flex justify-content-center align-items-center min-vh-100">
+        <!-- Contenedor que limita el ancho del formulario -->
+        <div class="login-container">
+            <!-- Tarjeta con sombra donde se encuentra el formulario -->
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    
+                    <!-- Encabezado del login -->
+                    <div class="text-center mb-4">
+                        <!-- Nombre de la aplicación -->
+                        <h1 class="fw-bold text-primary">InventarioPlus</h1>
+                        <!-- Breve descripción del sistema -->
+                        <p class="text-muted">Sistema de Gestión de Inventarios</p>
+                    </div>
+
+                    <!-- Formulario de inicio de sesión -->
+                    <form id="loginForm">
+                        <!-- Campo: Correo electrónico -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="email" placeholder="correo@ejemplo.com" required>
+                        </div>
+
+                        <!-- Campo: Contraseña -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password" placeholder="Ingresa tu contraseña" required>
+                        </div>
+
+                        <!-- Campo: Selección del tipo de usuario (rol) -->
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Tipo de Usuario</label>
+                            <select class="form-select" id="role" required>
+                                <!-- Opción por defecto (placeholder) -->
+                                <option value="">Selecciona un rol</option>
+                                <!-- Opciones de rol: Empleado y Administrador -->
+                                <option value="empleado">Empleado</option>
+                                <option value="administrador">Administrador</option>
+                            </select>
+                        </div>
+
+                        <!-- Alerta de error (oculta por defecto, se muestra con JS) -->
+                        <div id="alertMessage" class="alert alert-danger alert-dismissible fade d-none" role="alert">
+                            <!-- Texto dinámico del mensaje de error -->
+                            <span id="alertText"></span>
+                            <!-- Botón para cerrar la alerta -->
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+
+                        <!-- Botón para enviar el formulario de login -->
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Iniciar Sesión</button>
+                    </form>
+
+                    <!-- Separador visual -->
+                    <hr class="my-4">
+
+                    <!-- Sección de credenciales de prueba para facilitar el acceso -->
+                    <div class="text-center">
+                        <p class="text-muted small mb-3">Credenciales de prueba:</p>
+                        <!-- Credenciales del empleado -->
+                        <p class="small"><strong>Empleado:</strong><br>
+                        Email: empleado@ejemplo.com<br>
+                        Contraseña: 123456</p>
+                        <!-- Credenciales del administrador -->
+                        <p class="small"><strong>Administrador:</strong><br>
+                        Email: admin@ejemplo.com<br>
+                        Contraseña: admin123</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS (bundle incluye Popper) para componentes interactivos -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMYJXoaTTwkYwLBYMn2q06Yw+tV86PbH2R8+9E7CcQaJ" crossorigin="anonymous"></script>
+    <!-- Script de autenticación que maneja el formulario de login -->
+    <script src="js/auth.js"></script>
+</body>
+</html>

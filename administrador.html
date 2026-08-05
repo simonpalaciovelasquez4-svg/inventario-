@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     ARCHIVO: administrador.html
+     DESCRIPCIÓN: Panel de administración de InventarioPlus.
+     Permite gestionar productos (CRUD), categorías, registrar
+     movimientos de entrada/salida, ver historial y administrar
+     empleados. La lógica de negocio está en js/auth.js y la
+     lógica de interfaz en js/productos.js.
+     ============================================================ -->
+<html lang="es">
+<head>
+    <!-- Configuración básica de la página -->
+    <meta charset="UTF-8">
+    <!-- Viewport responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título de la pestaña -->
+    <title>InventarioPlus - Panel de Administrador</title>
+
+    <!-- Bootstrap 5 CSS desde CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <!-- Iconos de Bootstrap Icons desde CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Estilos personalizados del proyecto -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- ==================== NAVBAR (Barra de navegación superior) ==================== -->
+    <nav class="navbar navbar-expand-lg navbar-custom navbar-dark">
+        <div class="container">
+            <!-- Marca/Logo de la aplicación -->
+            <a class="navbar-brand" href="#">
+                <!-- Icono de caja + nombre -->
+                <i class="bi bi-box"></i> InventarioPlus
+            </a>
+            <!-- Contenedor derecho de la barra: info del usuario y botón de salida -->
+            <div class="d-flex align-items-center gap-3">
+                <!-- Aquí se inyecta el nombre y rol del usuario (desde auth.js) -->
+                <div id="userInfo"></div>
+                <!-- Botón para cerrar sesión -->
+                <button id="logoutBtn" class="btn btn-logout">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== CONTENEDOR PRINCIPAL ==================== -->
+    <div class="container mt-4">
+        <!-- Título del panel -->
+        <h2 class="mb-4"><i class="bi bi-shield-lock"></i> Panel de Administrador</h2>
+
+        <!-- ==================== ALERTA DE ÉXITO ==================== -->
+        <div id="alertExito" class="alert alert-success alert-dismissible fade d-none" role="alert">
+            <!-- Texto del mensaje (se rellena con JS) -->
+            <span id="alertExitoText"></span>
+            <!-- Botón cerrar -->
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- ==================== ESTADÍSTICAS ==================== -->
+        <!-- Fila con 4 tarjetas de estadísticas del inventario -->
+        <div class="row mb-4">
+            <!-- Tarjeta: Total de productos -->
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Total Productos</h6>
+                        <h3 id="totalProductos">0</h3>
+                    </div>
+                </div>
+            </div>
+            <!-- Tarjeta: Valor total del inventario -->
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Valor Inventario</h6>
+                        <h3 id="valorInventario">$0</h3>
+                    </div>
+                </div>
+            </div>
+            <!-- Tarjeta: Productos con bajo stock -->
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Bajo Stock</h6>
+                        <h3 id="productosBajoStock">0</h3>
+                    </div>
+                </div>
+            </div>
+            <!-- Tarjeta: Total de movimientos registrados -->
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Movimientos</h6>
+                        <h3 id="totalMovimientos">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== PESTAÑAS (TABS) DE NAVEGACIÓN ==================== -->
+        <ul class="nav nav-tabs mb-4">
+            <!-- Tab: Productos (activa por defecto) -->
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#productos">Productos</a>
+            </li>
+            <!-- Tab: Categorías -->
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#categorias">Categorías</a>
+            </li>
+            <!-- Tab: Registrar Movimiento -->
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#registroMovimientos">Registrar Movimiento</a>
+            </li>
+            <!-- Tab: Historial de movimientos -->
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#movimientos">Historial</a>
+            </li>
+            <!-- Tab: Gestión de empleados -->
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#empleados">Empleados</a>
+            </li>
+        </ul>
+
+        <!-- Contenedor del contenido de las pestañas -->
+        <div class="tab-content">
+
+            <!-- ==================== TAB PRODUCTOS ==================== -->
+            <div class="tab-pane fade show active" id="productos">
+                <!-- Barra de acciones -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <!-- Botón para abrir el formulario de nuevo producto -->
+                        <button class="btn btn-primary" onclick="abrirFormularioProducto()">
+                            <i class="bi bi-plus-circle"></i> Nuevo Producto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Formulario Crear/Editar Producto (oculto por defecto, se muestra con JS) -->
+                <div id="formProductoContainer" class="card mb-4 d-none">
+                    <div class="card-header">
+                        <!-- Título dinámico del formulario (Crear/Editar) -->
+                        <h5 id="formProductoTitulo">Crear Nuevo Producto</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Formulario de producto; submit se maneja con guardarProductoFormulario() -->
+                        <form id="formProducto" onsubmit="guardarProductoFormulario(); return false;">
+                            <!-- Fila 1: Código y Nombre -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Código <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="productoCodigo" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="productoNombre" required>
+                                </div>
+                            </div>
+                            <!-- Fila 2: Categoría, Precio y Stock -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Categoría <span class="text-danger">*</span></label>
+                                    <!-- Select de categorías (se llena con JS) -->
+                                    <select class="form-select" id="productoCategoria" required></select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Precio <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="productoPrecio" step="0.01" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Stock <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="productoStock" min="0" required>
+                                </div>
+                            </div>
+                            <!-- Fila 3: Descripción -->
+                            <div class="mb-3">
+                                <label class="form-label">Descripción</label>
+                                <textarea class="form-control" id="productoDescripcion" rows="3"></textarea>
+                            </div>
+                            <!-- Botones del formulario: Guardar y Cancelar -->
+                            <button type="submit" class="btn btn-success">Guardar Producto</button>
+                            <button type="button" class="btn btn-secondary" onclick="cancelarFormularioProducto()">Cancelar</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tabla de productos -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Gestión de Productos</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Tabla responsive -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <!-- Encabezados de la tabla -->
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Categoría</th>
+                                        <th>Stock</th>
+                                        <th>Precio</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <!-- Cuerpo de la tabla (se llena con JS) -->
+                                <tbody id="tablaProductosAdmin">
+                                    <tr><td colspan="7" class="text-center text-muted">Cargando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB CATEGORÍAS ==================== -->
+            <div class="tab-pane fade" id="categorias">
+                <div class="row">
+                    <!-- Columna: Formulario nueva categoría -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Nueva Categoría</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Formulario para crear categoría -->
+                                <form id="formCategoria" onsubmit="guardarCategoriaFormulario(); return false;">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="categoriaNombre" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100">Crear Categoría</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Columna: Lista de categorías existentes -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Categorías Existentes</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Lista de categorías (se llena con JS) -->
+                                <ul class="list-group" id="listaCategoriasAdmin">
+                                    <li class="list-group-item text-muted">Cargando...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB REGISTRAR MOVIMIENTOS ==================== -->
+            <div class="tab-pane fade" id="registroMovimientos">
+                <div class="row">
+                    <!-- Columna: Formulario de ENTRADA -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <!-- Encabezado verde (entrada = aumento de stock) -->
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Registrar Entrada</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Formulario de entrada -->
+                                <form id="formEntrada" onsubmit="registrarEntradaForm(); return false;">
+                                    <div class="mb-3">
+                                        <label class="form-label">Producto <span class="text-danger">*</span></label>
+                                        <!-- Select de productos (se llena con JS) -->
+                                        <select class="form-select" id="productoEntrada" required></select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Cantidad <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="cantidadEntrada" min="1" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Razón <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="razonEntrada" placeholder="ej: Compra a proveedor" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bi bi-check-circle"></i> Registrar Entrada
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna: Formulario de SALIDA -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <!-- Encabezado rojo (salida = disminución de stock) -->
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="bi bi-arrow-up-circle"></i> Registrar Salida</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Formulario de salida -->
+                                <form id="formSalida" onsubmit="registrarSalidaForm(); return false;">
+                                    <div class="mb-3">
+                                        <label class="form-label">Producto <span class="text-danger">*</span></label>
+                                        <!-- Select de productos (se llena con JS) -->
+                                        <select class="form-select" id="productoSalida" required></select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Cantidad <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="cantidadSalida" min="1" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Razón <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="razonSalida" placeholder="ej: Venta, devolución" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-danger w-100">
+                                        <i class="bi bi-check-circle"></i> Registrar Salida
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB HISTORIAL / MOVIMIENTOS ==================== -->
+            <div class="tab-pane fade" id="movimientos">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Historial Completo de Movimientos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <!-- Encabezados del historial -->
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Producto</th>
+                                        <th>Tipo</th>
+                                        <th>Descripción</th>
+                                        <th>Usuario</th>
+                                        <th>Cantidad</th>
+                                        <th>Stock Nuevo</th>
+                                    </tr>
+                                </thead>
+                                <!-- Cuerpo del historial (se llena con JS) -->
+                                <tbody id="tablaMovimientos">
+                                    <tr><td colspan="7" class="text-center text-muted">Sin movimientos</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB EMPLEADOS ==================== -->
+            <div class="tab-pane fade" id="empleados">
+                <div class="row mb-4">
+                    <!-- Columna: Formulario para registrar empleado -->
+                    <div class="col-md-5">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-person-plus"></i> Registrar Empleado</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Formulario de nuevo empleado -->
+                                <form id="formEmpleado" onsubmit="guardarEmpleadoFormulario(); return false;">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre Completo <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="empleadoNombre" placeholder="ej: Juan Pérez" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control" id="empleadoEmail" placeholder="correo@ejemplo.com" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Contraseña <span class="text-danger">*</span></label>
+                                        <input type="password" class="form-control" id="empleadoPassword" placeholder="Ingresa una contraseña" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bi bi-person-plus-fill"></i> Guardar Empleado
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna: Tabla de empleados registrados -->
+                    <div class="col-md-7">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-people"></i> Empleados Registrados</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <!-- Encabezados de empleados -->
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Nombre</th>
+                                                <th>Email</th>
+                                                <th>Rol</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <!-- Cuerpo de la tabla de empleados (se llena con JS) -->
+                                        <tbody id="tablaEmpleados">
+                                            <tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /tab-content -->
+    </div><!-- /container -->
+
+    <!-- Bootstrap 5 JS bundle (incluye Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Lógica de autenticación y negocio -->
+    <script src="js/auth.js"></script>
+    <!-- Lógica de interfaz de productos -->
+    <script src="js/productos.js"></script>
+
+    <!-- ==================== SCRIPT INLINE DEL PANEL DE ADMIN ==================== -->
+    <script>
+        /* ============================================================
+           FUNCIONES PARA EL FORMULARIO DE PRODUCTOS
+           ============================================================ */
+
+        /**
+         * Abre el formulario de producto en modo "crear" o "editar".
+         * @param {number|null} productoId - null = crear; ID = editar.
+         */
+        function abrirFormularioProducto(productoId = null) {
+            // Referencias a los elementos del formulario
+            const container = document.getElementById('formProductoContainer');
+            const form = document.getElementById('formProducto');
+            const titulo = document.getElementById('formProductoTitulo');
+
+            if (productoId === null) {
+                // MODO CREAR: limpia el formulario y configura el modo
+                titulo.textContent = 'Crear Nuevo Producto';
+                form.reset();
+                form.dataset.modo = 'crear';          // Indica modo creación
+                delete form.dataset.productoId;       // Borra ID anterior si existía
+            } else {
+                // MODO EDITAR: busca el producto y rellena los campos
+                const producto = obtenerProductoPorId(productoId);
+                if (!producto) return;                // Si no existe, no hace nada
+
+                titulo.textContent = 'Editar Producto';
+                document.getElementById('productoCodigo').value = producto.codigo;
+                document.getElementById('productoNombre').value = producto.nombre;
+                document.getElementById('productoCategoria').value = producto.categoria;
+                document.getElementById('productoPrecio').value = producto.precio;
+                document.getElementById('productoStock').value = producto.stock;
+                document.getElementById('productoDescripcion').value = producto.descripcion;
+
+                form.dataset.modo = 'editar';         // Indica modo edición
+                form.dataset.productoId = productoId; // Guarda el ID a editar
+            }
+
+            // Muestra el contenedor del formulario
+            container.classList.remove('d-none');
+        }
+
+        /**
+         * Oculta el formulario de producto y limpia sus campos.
+         */
+        function cancelarFormularioProducto() {
+            document.getElementById('formProductoContainer').classList.add('d-none');
+            document.getElementById('formProducto').reset();
+        }
+
+        /**
+         * Guarda un producto (crea o actualiza) según el modo del formulario.
+         * Recoge los datos del formulario y llama a las funciones de auth.js.
+         */
+        function guardarProductoFormulario() {
+            const form = document.getElementById('formProducto');
+            // Recopila los valores de los campos del formulario
+            const datos = {
+                codigo: document.getElementById('productoCodigo').value,
+                nombre: document.getElementById('productoNombre').value,
+                categoria: document.getElementById('productoCategoria').value,
+                precio: document.getElementById('productoPrecio').value,
+                stock: document.getElementById('productoStock').value,
+                descripcion: document.getElementById('productoDescripcion').value
+            };
+
+            try {
+                if (form.dataset.modo === 'crear') {
+                    // Modo crear: llama a crearProducto de auth.js
+                    crearProducto(datos);
+                    mostrarExito('Producto creado correctamente');
+                } else {
+                    // Modo editar: llama a actualizarProducto de auth.js
+                    actualizarProducto(parseInt(form.dataset.productoId), datos);
+                    mostrarExito('Producto actualizado correctamente');
+                }
+
+                // Limpia el formulario y refresca las tablas y estadísticas
+                cancelarFormularioProducto();
+                actualizarTablaProductosAdmin();
+                actualizarEstadisticas();
+            } catch (error) {
+                // Muestra cualquier error ocurrido
+                alert('Error: ' + error.message);
+            }
+        }
+
+        /**
+         * Confirma y elimina un producto.
+         * @param {number} productoId - ID del producto a eliminar.
+         */
+        function eliminarProductoConfirm(productoId) {
+            const producto = obtenerProductoPorId(productoId);
+            // Pide confirmación al usuario antes de eliminar
+            if (confirm(`¿Eliminar "${producto.nombre}"?`)) {
+                eliminarProducto(productoId);   // Llama a auth.js
+                mostrarExito('Producto eliminado correctamente');
+                actualizarTablaProductosAdmin();
+                actualizarEstadisticas();
+            }
+        }
+
+        /**
+         * Muestra una alerta de éxito por 3 segundos.
+         * @param {string} msg - Mensaje a mostrar.
+         */
+        function mostrarExito(msg) {
+            const div = document.getElementById('alertExito');
+            document.getElementById('alertExitoText').textContent = msg;
+            div.classList.remove('d-none');           // Hace visible la alerta
+            setTimeout(() => div.classList.add('d-none'), 3000);  // La oculta a los 3s
+        }
+
+        /* ============================================================
+           GESTIÓN DE EMPLEADOS
+           ============================================================ */
+
+        /**
+         * Guarda un nuevo empleado desde el formulario.
+         * Valida campos y evita correos duplicados.
+         */
+        function guardarEmpleadoFormulario() {
+            // Recoge y limpia (trim) los valores del formulario
+            const nombre = document.getElementById('empleadoNombre').value.trim();
+            const email = document.getElementById('empleadoEmail').value.trim();
+            const password = document.getElementById('empleadoPassword').value;
+
+            // Validación: todos los campos son obligatorios
+            if (!nombre || !email || !password) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+
+            // Validación: no permitir correos duplicados
+            if (obtenerEmpleadoPorEmail(email)) {
+                alert('Ya existe un empleado con este correo electrónico');
+                return;
+            }
+
+            // Crea el empleado usando auth.js y actualiza la interfaz
+            crearEmpleado({ nombre, email, password });
+            mostrarExito('Empleado registrado correctamente');
+            document.getElementById('formEmpleado').reset();
+            actualizarTablaEmpleados();
+        }
+
+        /**
+         * Confirma y elimina un empleado.
+         * @param {number} empleadoId - ID del empleado a eliminar.
+         */
+        function eliminarEmpleadoConfirm(empleadoId) {
+            const empleado = obtenerEmpleadoPorId(empleadoId);
+            // Pide confirmación antes de eliminar
+            if (confirm(`¿Eliminar a "${empleado.nombre}"?`)) {
+                eliminarEmpleado(empleadoId);  // Llama a auth.js
+                mostrarExito('Empleado eliminado correctamente');
+                actualizarTablaEmpleados();
+            }
+        }
+
+        /**
+         * Renderiza la tabla de empleados con todos los registrados.
+         * Muestra ID, nombre, email, rol y botón de eliminar.
+         */
+        function actualizarTablaEmpleados() {
+            const tabla = document.getElementById('tablaEmpleados');
+            if (!tabla) return;  // Si no existe la tabla, no hace nada
+
+            // Obtiene la lista de empleados
+            const empleados = obtenerEmpleados();
+            tabla.innerHTML = '';
+
+            // Mensaje si no hay empleados
+            if (empleados.length === 0) {
+                tabla.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay empleados registrados</td></tr>';
+                return;
+            }
+
+            // Recorre cada empleado y crea una fila en la tabla
+            empleados.forEach(empleado => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td>${empleado.id}</td>
+                    <td>${empleado.nombre}</td>
+                    <td>${empleado.email}</td>
+                    <td><span class="badge bg-primary">Empleado</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="eliminarEmpleadoConfirm(${empleado.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tabla.appendChild(fila);
+            });
+        }
+
+        /* ============================================================
+           INICIALIZACIÓN DEL PANEL
+           Se ejecuta cuando el DOM está completamente cargado
+           ============================================================ */
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializa selects, tablas y estadísticas al cargar la página
+            inicializarInterfazProductos();
+            actualizarTablaProductosAdmin();
+            actualizarListaCategorias();
+            actualizarTablaMovimientos();
+            actualizarTablaEmpleados();
+        });
+    </script>
+</body>
+</html>
